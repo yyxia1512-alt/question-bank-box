@@ -11,11 +11,7 @@ class InMemoryQuestionStore {
   }
 
   importPackage(data) {
-    const validation = validateQbankPackageData(data);
-    if (!validation.valid) {
-      const message = validation.errors.map((item) => item.message).join('; ');
-      throw new Error(`invalid package: ${message}`);
-    }
+    validatePackageOrThrow(data);
 
     this.modules = new Map(data.modules.map((module) => [module.id, clone(module)]));
     this.questions = new Map(
@@ -27,6 +23,63 @@ class InMemoryQuestionStore {
     this.answerRecords = [];
     this.revisions = [];
     this.overrides = [];
+  }
+
+  appendPackage(data) {
+    validatePackageOrThrow(data);
+    const duplicate = data.questions.find((question) => this.questions.has(question.id));
+    if (duplicate) {
+      throw new Error(`question already exists: ${duplicate.id}`);
+    }
+
+    const nextModules = new Map(this.modules);
+    const nextQuestions = new Map(this.questions);
+    for (const module of data.modules) {
+      if (!nextModules.has(module.id)) {
+        nextModules.set(module.id, clone(module));
+      }
+    }
+    for (const question of data.questions) {
+      nextQuestions.set(question.id, normalizeQuestion(question));
+    }
+
+    this.modules = nextModules;
+    this.questions = nextQuestions;
+    return this.rebuildStats();
+  }
+
+  overwritePackage(data) {
+    validatePackageOrThrow(data);
+    const nextModules = new Map(this.modules);
+    const nextQuestions = new Map(this.questions);
+    const nextRevisions = this.revisions.map(clone);
+
+    for (const module of data.modules) {
+      if (!nextModules.has(module.id)) {
+        nextModules.set(module.id, clone(module));
+      }
+    }
+
+    for (const incoming of data.questions) {
+      const normalized = normalizeQuestion(incoming);
+      const existing = nextQuestions.get(normalized.id);
+      if (existing) {
+        const updated = { ...normalized, revision: existing.revision + 1 };
+        nextQuestions.set(updated.id, updated);
+        nextRevisions.push({
+          questionId: updated.id,
+          before: clone(existing),
+          after: clone(updated),
+        });
+      } else {
+        nextQuestions.set(normalized.id, normalized);
+      }
+    }
+
+    this.modules = nextModules;
+    this.questions = nextQuestions;
+    this.revisions = nextRevisions;
+    return this.rebuildStats();
   }
 
   listQuestions(filter = { scope: 'all' }) {
@@ -77,6 +130,14 @@ class InMemoryQuestionStore {
       answerRecords: this.answerRecords,
       overrides: this.overrides,
     });
+  }
+}
+
+function validatePackageOrThrow(data) {
+  const validation = validateQbankPackageData(data);
+  if (!validation.valid) {
+    const message = validation.errors.map((item) => item.message).join('; ');
+    throw new Error(`invalid package: ${message}`);
   }
 }
 
