@@ -47,6 +47,16 @@ test('rejects duplicate question ids', () => {
   assert.match(result.errors[0].message, /duplicate question id/);
 });
 
+test('rejects manifest question count mismatch when provided', () => {
+  const data = validPackage();
+  data.manifest.question_count = 2;
+
+  const result = validateQbankPackageData(data);
+
+  assert.equal(result.valid, false);
+  assert.match(result.errors[0].message, /question_count/);
+});
+
 test('rejects questions that reference missing modules', () => {
   const data = validPackage();
   data.questions[0].module_id = 'missing';

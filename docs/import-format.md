@@ -74,3 +74,21 @@ Import rules:
 - Every question must reference an existing module.
 - Every answer must reference an existing option.
 - Invalid packages are rejected before any database write.
+- `manifest.question_count`, when present, must match the number of questions.
+
+## Import Modes
+
+The app supports two user-facing update modes:
+
+- Append: add new question IDs only. If any incoming question ID already exists, the whole import is rejected.
+- Overwrite: update existing question IDs and add new IDs. Updating an existing question increments its revision and records a before/after revision snapshot.
+
+The built-in first-launch seed uses a replace-all import internally.
+
+Every successful import must trigger a full consistency refresh:
+
+- rebuild question stats;
+- rebuild module stats;
+- re-evaluate wrong-question visibility against current question revisions.
+
+This is required even for append imports because module totals can change.

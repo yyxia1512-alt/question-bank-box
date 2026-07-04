@@ -13,6 +13,7 @@ Implemented:
 - HarmonyOS ArkTS Stage project skeleton.
 - Initial ArkUI pages for practice, wrong questions, question bank management, and stats.
 - ArkTS domain/service boundary files and database schema definitions.
+- Transaction-oriented import mode contract for replace-all, append, and overwrite flows.
 
 Not complete yet:
 

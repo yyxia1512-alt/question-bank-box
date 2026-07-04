@@ -1,14 +1,14 @@
-import { QuestionSnapshot, QuestionStatus } from '../domain/QuestionTypes';
+import {
+  ConsistencyRefreshRequest,
+  ConsistencyRefreshScope,
+  QuestionSnapshot,
+  QuestionStatus
+} from '../domain/QuestionTypes';
 
 export interface QuestionRevisionChange {
   questionId: string;
   beforeJson: string;
   afterJson: string;
-}
-
-export interface ConsistencyRefreshRequest {
-  questionIds: string[];
-  reason: string;
 }
 
 export interface QuestionAdminResult {
@@ -51,6 +51,7 @@ function buildResult(
       afterJson: JSON.stringify(afterQuestion)
     },
     refresh: {
+      scope: ConsistencyRefreshScope.Questions,
       questionIds: [beforeQuestion.id],
       reason
     }

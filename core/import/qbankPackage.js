@@ -10,6 +10,9 @@ function validateQbankPackageData(data) {
   if (!data.manifest || data.manifest.format_version !== 1) {
     errors.push(error('manifest', 'manifest.format_version must be 1'));
   }
+  if (data.manifest && data.manifest.question_count !== undefined && data.manifest.question_count !== questions.length) {
+    errors.push(error('manifest', 'manifest.question_count must match questions length'));
+  }
 
   for (const module of modules) {
     if (!module.id || !module.name) {

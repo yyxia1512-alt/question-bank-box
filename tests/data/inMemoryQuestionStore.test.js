@@ -42,11 +42,14 @@ function packageData() {
 
 test('imports a valid package and lists active questions', () => {
   const store = new InMemoryQuestionStore();
-  store.importPackage(packageData());
+  const result = store.importPackage(packageData());
 
   const questions = store.listQuestions({ scope: 'all' });
 
   assert.deepEqual(questions.map((question) => question.id), ['q1', 'q2']);
+  assert.equal(result.mode, 'replace_all');
+  assert.deepEqual(result.refresh, { scope: 'all', reason: 'import_replace_all' });
+  assert.equal(result.stats.moduleStats.legal.totalCount, 1);
 });
 
 test('rejects invalid package imports without clearing existing data', () => {
@@ -129,9 +132,12 @@ test('append import adds only new questions and rejects duplicate ids', () => {
       stem: '追加题干',
     },
   ];
-  store.appendPackage(extra);
+  const result = store.appendPackage(extra);
 
   assert.deepEqual(store.listQuestions({ scope: 'all' }).map((question) => question.id), ['q1', 'q2', 'q3']);
+  assert.equal(result.mode, 'append');
+  assert.deepEqual(result.refresh, { scope: 'all', reason: 'import_append' });
+  assert.equal(result.stats.moduleStats.legal.totalCount, 2);
 });
 
 test('overwrite import updates existing questions with revision history', () => {
@@ -154,10 +160,12 @@ test('overwrite import updates existing questions with revision history', () => 
     },
   ];
 
-  store.overwritePackage(update);
+  const result = store.overwritePackage(update);
 
   assert.equal(store.getQuestion('q1').stem, '覆盖后的题干');
   assert.equal(store.getQuestion('q1').revision, 2);
   assert.equal(store.listRevisions('q1').length, 1);
-  assert.equal(store.rebuildStats().questionStats.q1.needsPractice, true);
+  assert.equal(result.mode, 'overwrite');
+  assert.deepEqual(result.refresh, { scope: 'all', reason: 'import_overwrite' });
+  assert.equal(result.stats.questionStats.q1.needsPractice, true);
 });

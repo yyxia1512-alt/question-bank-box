@@ -23,6 +23,7 @@ class InMemoryQuestionStore {
     this.answerRecords = [];
     this.revisions = [];
     this.overrides = [];
+    return buildImportResult('replace_all', this.rebuildStats());
   }
 
   appendPackage(data) {
@@ -45,7 +46,7 @@ class InMemoryQuestionStore {
 
     this.modules = nextModules;
     this.questions = nextQuestions;
-    return this.rebuildStats();
+    return buildImportResult('append', this.rebuildStats());
   }
 
   overwritePackage(data) {
@@ -79,7 +80,7 @@ class InMemoryQuestionStore {
     this.modules = nextModules;
     this.questions = nextQuestions;
     this.revisions = nextRevisions;
-    return this.rebuildStats();
+    return buildImportResult('overwrite', this.rebuildStats());
   }
 
   listQuestions(filter = { scope: 'all' }) {
@@ -139,6 +140,17 @@ function validatePackageOrThrow(data) {
     const message = validation.errors.map((item) => item.message).join('; ');
     throw new Error(`invalid package: ${message}`);
   }
+}
+
+function buildImportResult(mode, stats) {
+  return {
+    mode,
+    refresh: {
+      scope: 'all',
+      reason: `import_${mode}`,
+    },
+    stats,
+  };
 }
 
 function normalizeQuestion(question) {
