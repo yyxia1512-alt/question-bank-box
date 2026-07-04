@@ -1,3 +1,5 @@
+const { getWrongQuestionState } = require('./wrongQuestion');
+
 function rebuildStats({ questions, answerRecords, overrides }) {
   const overrideByQuestion = new Map(overrides.map((override) => [override.questionId, override]));
   const activeQuestions = questions.filter((question) => question.status === 'active');
@@ -13,9 +15,17 @@ function rebuildStats({ questions, answerRecords, overrides }) {
     );
     const latest = currentRecords[currentRecords.length - 1];
     const hidden = Boolean(overrideByQuestion.get(question.id)?.hidden);
-    const hasOldRecordsOnly = currentRecords.length === 0 && allRecords.length > 0;
     const wrongCount = currentRecords.filter((record) => !record.isCorrect).length;
-    const needsPractice = hasOldRecordsOnly || (latest ? !latest.isCorrect : false);
+    const practiceState = getWrongQuestionState({
+      question,
+      records: allRecords,
+      override: null,
+    });
+    const visibleState = getWrongQuestionState({
+      question,
+      records: allRecords,
+      override: overrideByQuestion.get(question.id),
+    });
 
     questionStats[question.id] = {
       questionId: question.id,
@@ -23,8 +33,10 @@ function rebuildStats({ questions, answerRecords, overrides }) {
       answeredCount: currentRecords.length,
       wrongCount,
       latestIsCorrect: latest ? latest.isCorrect : null,
-      needsPractice,
+      needsPractice: practiceState.shouldShow,
       hidden,
+      consecutiveCorrect: practiceState.consecutiveCorrect,
+      appearanceWeight: practiceState.appearanceWeight,
     };
 
     if (!moduleStats[question.moduleId]) {
@@ -40,7 +52,7 @@ function rebuildStats({ questions, answerRecords, overrides }) {
     if (currentRecords.length > 0) {
       module.practicedCount += 1;
     }
-    if (needsPractice && !hidden) {
+    if (visibleState.shouldShow) {
       module.wrongCount += 1;
     }
   }

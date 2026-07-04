@@ -48,6 +48,7 @@ export interface QuestionSnapshot {
   explanation: string;
   status: QuestionStatus;
   revision: number;
+  practiceWeight?: number;
 }
 
 export interface PracticeFilter {

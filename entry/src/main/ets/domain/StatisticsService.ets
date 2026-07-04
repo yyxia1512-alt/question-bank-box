@@ -1,5 +1,5 @@
 import { AnswerRecord, QuestionSnapshot, QuestionStatus } from './QuestionTypes';
-import { WrongQuestionOverride } from './WrongQuestionService';
+import { getWrongQuestionState, WrongQuestionOverride } from './WrongQuestionService';
 
 export interface QuestionStat {
   questionId: string;
@@ -9,6 +9,8 @@ export interface QuestionStat {
   latestIsCorrect: boolean | null;
   needsPractice: boolean;
   hidden: boolean;
+  consecutiveCorrect: number;
+  appearanceWeight: number;
 }
 
 export interface ModuleStat {
@@ -40,9 +42,9 @@ export function rebuildStats(
       const currentRecords = allRecords.filter((record) => record.questionRevision === question.revision);
       const latest = currentRecords.length > 0 ? currentRecords[currentRecords.length - 1] : undefined;
       const hidden = overrides[question.id] ? overrides[question.id].hidden : false;
-      const hasOldRecordsOnly = currentRecords.length === 0 && allRecords.length > 0;
       const wrongCount = currentRecords.filter((record) => !record.isCorrect).length;
-      const needsPractice = hasOldRecordsOnly || (latest ? !latest.isCorrect : false);
+      const practiceState = getWrongQuestionState(question, allRecords);
+      const visibleState = getWrongQuestionState(question, allRecords, overrides[question.id]);
 
       questionStats[question.id] = {
         questionId: question.id,
@@ -50,8 +52,10 @@ export function rebuildStats(
         answeredCount: currentRecords.length,
         wrongCount,
         latestIsCorrect: latest ? latest.isCorrect : null,
-        needsPractice,
-        hidden
+        needsPractice: practiceState.shouldShow,
+        hidden,
+        consecutiveCorrect: practiceState.consecutiveCorrect,
+        appearanceWeight: practiceState.appearanceWeight
       };
 
       if (!moduleStats[question.moduleId]) {
@@ -67,7 +71,7 @@ export function rebuildStats(
       if (currentRecords.length > 0) {
         moduleStat.practicedCount += 1;
       }
-      if (needsPractice && !hidden) {
+      if (visibleState.shouldShow) {
         moduleStat.wrongCount += 1;
       }
     });

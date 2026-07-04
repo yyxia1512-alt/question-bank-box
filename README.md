@@ -14,6 +14,7 @@ Implemented:
 - Initial ArkUI pages for practice, wrong questions, question bank management, and stats.
 - ArkTS domain/service boundary files and database schema definitions.
 - Transaction-oriented import mode contract for replace-all, append, and overwrite flows.
+- Weighted random practice ordering and wrong-question mastery rules.
 
 Not complete yet:
 

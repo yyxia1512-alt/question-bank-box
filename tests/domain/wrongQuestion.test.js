@@ -46,8 +46,45 @@ test('does not show a question whose latest current-revision answer is correct',
     override: null,
   });
 
+  assert.equal(state.shouldShow, true);
+  assert.equal(state.reason, 'needs_reinforcement');
+  assert.equal(state.consecutiveCorrect, 1);
+  assert.equal(state.appearanceWeight, 0.5);
+});
+
+test('removes a wrong question only after enough consecutive correct answers', () => {
+  const state = getWrongQuestionState({
+    question: { id: 'q1', revision: 1, status: 'active' },
+    records: [
+      { questionId: 'q1', questionRevision: 1, isCorrect: false, answeredAt: 10 },
+      { questionId: 'q1', questionRevision: 1, isCorrect: true, answeredAt: 20 },
+      { questionId: 'q1', questionRevision: 1, isCorrect: true, answeredAt: 30 },
+      { questionId: 'q1', questionRevision: 1, isCorrect: true, answeredAt: 40 },
+    ],
+    override: null,
+  });
+
   assert.equal(state.shouldShow, false);
-  assert.equal(state.reason, 'current_correct');
+  assert.equal(state.reason, 'mastered');
+  assert.equal(state.consecutiveCorrect, 3);
+  assert.equal(state.appearanceWeight, 0);
+});
+
+test('resets wrong-question mastery after a later incorrect answer', () => {
+  const state = getWrongQuestionState({
+    question: { id: 'q1', revision: 1, status: 'active' },
+    records: [
+      { questionId: 'q1', questionRevision: 1, isCorrect: false, answeredAt: 10 },
+      { questionId: 'q1', questionRevision: 1, isCorrect: true, answeredAt: 20 },
+      { questionId: 'q1', questionRevision: 1, isCorrect: false, answeredAt: 30 },
+    ],
+    override: null,
+  });
+
+  assert.equal(state.shouldShow, true);
+  assert.equal(state.reason, 'incorrect');
+  assert.equal(state.consecutiveCorrect, 0);
+  assert.equal(state.appearanceWeight, 1);
 });
 
 test('does not show soft-deleted questions', () => {

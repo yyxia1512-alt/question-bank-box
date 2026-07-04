@@ -1,9 +1,11 @@
+const DEFAULT_REQUIRED_CORRECT_STREAK = 3;
+
 function getWrongQuestionState({ question, records, override }) {
   if (question.status !== 'active') {
-    return { shouldShow: false, reason: 'deleted' };
+    return buildState(false, 'deleted', 0, 0);
   }
   if (override && override.hidden) {
-    return { shouldShow: false, reason: 'hidden_by_user' };
+    return buildState(false, 'hidden_by_user', 0, 0);
   }
 
   const related = records
@@ -14,19 +16,59 @@ function getWrongQuestionState({ question, records, override }) {
     (record) => record.questionRevision === question.revision,
   );
   if (currentRevision.length === 0 && related.length > 0) {
-    return { shouldShow: true, reason: 'revision_reset' };
+    return buildState(true, 'revision_reset', 0, 1);
   }
   if (currentRevision.length === 0) {
-    return { shouldShow: false, reason: 'never_answered' };
+    return buildState(false, 'never_answered', 0, 0);
   }
 
-  const latest = currentRevision[currentRevision.length - 1];
-  if (latest.isCorrect) {
-    return { shouldShow: false, reason: 'current_correct' };
+  const mastery = getWrongQuestionMastery(currentRevision);
+  if (!mastery.hasWrongAnswer) {
+    return buildState(false, 'current_correct', mastery.consecutiveCorrect, 0);
   }
-  return { shouldShow: true, reason: 'incorrect' };
+  if (!mastery.latestIsCorrect) {
+    return buildState(true, 'incorrect', 0, 1);
+  }
+  if (mastery.consecutiveCorrect >= DEFAULT_REQUIRED_CORRECT_STREAK) {
+    return buildState(false, 'mastered', mastery.consecutiveCorrect, 0);
+  }
+
+  return buildState(
+    true,
+    'needs_reinforcement',
+    mastery.consecutiveCorrect,
+    1 / (mastery.consecutiveCorrect + 1),
+  );
+}
+
+function getWrongQuestionMastery(records) {
+  const ordered = records.slice().sort((left, right) => left.answeredAt - right.answeredAt);
+  const latest = ordered[ordered.length - 1];
+  let consecutiveCorrect = 0;
+  for (let index = ordered.length - 1; index >= 0; index -= 1) {
+    if (!ordered[index].isCorrect) {
+      break;
+    }
+    consecutiveCorrect += 1;
+  }
+
+  return {
+    hasWrongAnswer: ordered.some((record) => !record.isCorrect),
+    latestIsCorrect: latest ? latest.isCorrect : false,
+    consecutiveCorrect,
+  };
+}
+
+function buildState(shouldShow, reason, consecutiveCorrect, appearanceWeight) {
+  return {
+    shouldShow,
+    reason,
+    consecutiveCorrect,
+    appearanceWeight,
+  };
 }
 
 module.exports = {
   getWrongQuestionState,
+  getWrongQuestionMastery,
 };

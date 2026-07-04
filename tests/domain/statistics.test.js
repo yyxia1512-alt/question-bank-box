@@ -9,7 +9,7 @@ const questions = [
   { id: 'q3', moduleId: 'case', revision: 1, status: 'deleted' },
 ];
 
-test('rebuilds question stats from current-revision answer records', () => {
+test('keeps a recently corrected wrong question in reinforcement state', () => {
   const stats = rebuildStats({
     questions,
     answerRecords: [
@@ -25,9 +25,28 @@ test('rebuilds question stats from current-revision answer records', () => {
     answeredCount: 2,
     wrongCount: 1,
     latestIsCorrect: true,
-    needsPractice: false,
+    needsPractice: true,
     hidden: false,
+    consecutiveCorrect: 1,
+    appearanceWeight: 0.5,
   });
+});
+
+test('marks a wrong question mastered after enough consecutive correct answers', () => {
+  const stats = rebuildStats({
+    questions,
+    answerRecords: [
+      { questionId: 'q1', questionRevision: 1, isCorrect: false, answeredAt: 10 },
+      { questionId: 'q1', questionRevision: 1, isCorrect: true, answeredAt: 20 },
+      { questionId: 'q1', questionRevision: 1, isCorrect: true, answeredAt: 30 },
+      { questionId: 'q1', questionRevision: 1, isCorrect: true, answeredAt: 40 },
+    ],
+    overrides: [],
+  });
+
+  assert.equal(stats.questionStats.q1.needsPractice, false);
+  assert.equal(stats.questionStats.q1.consecutiveCorrect, 3);
+  assert.equal(stats.questionStats.q1.appearanceWeight, 0);
 });
 
 test('marks revised questions as needing practice when only old records exist', () => {
