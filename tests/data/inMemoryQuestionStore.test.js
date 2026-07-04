@@ -1,0 +1,104 @@
+const assert = require('node:assert/strict');
+const test = require('node:test');
+
+const { InMemoryQuestionStore } = require('../../core/data/inMemoryQuestionStore');
+const { editQuestion } = require('../../core/domain/questionAdmin');
+
+function packageData() {
+  return {
+    manifest: { name: 'test bank', version: '1.0.0', format_version: 1 },
+    modules: [
+      { id: 'legal', name: '法律', order: 1, status: 'active' },
+      { id: 'case', name: '案例', order: 2, status: 'active' },
+    ],
+    questions: [
+      {
+        id: 'q1',
+        module_id: 'legal',
+        moduleId: 'legal',
+        type: 'single_choice',
+        stem: '题干一',
+        options: [{ id: 'A', text: 'A' }, { id: 'B', text: 'B' }],
+        answer: ['A'],
+        explanation: '解析一',
+        status: 'active',
+        revision: 1,
+      },
+      {
+        id: 'q2',
+        module_id: 'case',
+        moduleId: 'case',
+        type: 'true_false',
+        stem: '题干二',
+        options: [{ id: 'true', text: '正确' }, { id: 'false', text: '错误' }],
+        answer: ['false'],
+        explanation: '解析二',
+        status: 'active',
+        revision: 1,
+      },
+    ],
+  };
+}
+
+test('imports a valid package and lists active questions', () => {
+  const store = new InMemoryQuestionStore();
+  store.importPackage(packageData());
+
+  const questions = store.listQuestions({ scope: 'all' });
+
+  assert.deepEqual(questions.map((question) => question.id), ['q1', 'q2']);
+});
+
+test('filters imported questions by module and type', () => {
+  const store = new InMemoryQuestionStore();
+  store.importPackage(packageData());
+
+  const questions = store.listQuestions({
+    scope: 'module_type',
+    moduleId: 'legal',
+    questionType: 'single_choice',
+  });
+
+  assert.deepEqual(questions.map((question) => question.id), ['q1']);
+});
+
+test('records answers and rebuilds stats', () => {
+  const store = new InMemoryQuestionStore();
+  store.importPackage(packageData());
+
+  store.saveAnswerRecord({
+    questionId: 'q1',
+    questionRevision: 1,
+    userAnswer: ['B'],
+    correctAnswer: ['A'],
+    isCorrect: false,
+    answeredAt: 10,
+  });
+
+  const stats = store.rebuildStats();
+
+  assert.equal(stats.questionStats.q1.needsPractice, true);
+  assert.equal(stats.moduleStats.legal.wrongCount, 1);
+});
+
+test('applies a question edit and refreshes affected stats', () => {
+  const store = new InMemoryQuestionStore();
+  store.importPackage(packageData());
+  store.saveAnswerRecord({
+    questionId: 'q1',
+    questionRevision: 1,
+    userAnswer: ['A'],
+    correctAnswer: ['A'],
+    isCorrect: true,
+    answeredAt: 10,
+  });
+
+  const change = editQuestion(store.getQuestion('q1'), { answer: ['B'] });
+  store.applyQuestionChange(change);
+
+  const stats = store.rebuildStats();
+
+  assert.equal(store.getQuestion('q1').revision, 2);
+  assert.equal(stats.questionStats.q1.needsPractice, true);
+  assert.equal(store.listRevisions('q1').length, 1);
+});
