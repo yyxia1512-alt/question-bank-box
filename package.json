@@ -1,0 +1,10 @@
+{
+  "name": "question-bank-box",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Offline HarmonyOS question bank practice app.",
+  "scripts": {
+    "test": "node --test tests/domain/*.test.js tests/import/*.test.js",
+    "test:parser": "/Users/bytedance/.cache/codex-runtimes/codex-primary-runtime/dependencies/python/bin/python3 -m unittest tests/test_qbank_parser.py"
+  }
+}

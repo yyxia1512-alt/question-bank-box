@@ -1,0 +1,11 @@
+.DS_Store
+__pycache__/
+*.py[cod]
+node_modules/
+oh_modules/
+.hvigor/
+build/
+dist/
+data/seed/*.json
+data/seed/*.zip
+entry/src/main/resources/rawfile/*.zip

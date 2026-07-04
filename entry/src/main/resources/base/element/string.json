@@ -1,0 +1,16 @@
+{
+  "string": [
+    {
+      "name": "app_name",
+      "value": "题库匣"
+    },
+    {
+      "name": "module_desc",
+      "value": "题库匣入口模块"
+    },
+    {
+      "name": "entry_ability_desc",
+      "value": "题库匣主入口"
+    }
+  ]
+}

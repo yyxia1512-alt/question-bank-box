@@ -1,0 +1,11 @@
+{
+  "modelVersion": "5.0.0",
+  "name": "question-bank-box",
+  "version": "1.0.0",
+  "description": "Offline HarmonyOS question bank practice app.",
+  "main": "",
+  "author": "question-bank-box",
+  "license": "MIT",
+  "dependencies": {},
+  "devDependencies": {}
+}

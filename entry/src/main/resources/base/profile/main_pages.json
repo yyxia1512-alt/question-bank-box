@@ -1,0 +1,9 @@
+{
+  "src": [
+    "pages/Index",
+    "pages/Practice",
+    "pages/WrongQuestions",
+    "pages/Admin",
+    "pages/Stats"
+  ]
+}
