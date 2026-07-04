@@ -57,6 +57,10 @@ The generated seed data is local-only and intentionally ignored by Git:
 
 To integrate the first-launch seed package into a local app build, generate it from the private source PDF and copy the zip to `entry/src/main/resources/rawfile/qbank-v2026.05.zip`.
 
+```bash
+bash tools/integrate_seed_package.sh data/seed/qbank-v2026.05.zip
+```
+
 User-side imports should use the fixed structured format documented in `docs/import-format.md`; user-side PDF parsing is intentionally unsupported.
 
 ## Design Docs
